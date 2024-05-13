@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>SponsorEmailAddressMandatoryAtCreation</fullName>
+    <active>true</active>
+    <description>A sponsor can not be created without an email address</description>
+    <errorConditionFormula>ISBLANK(CAMPX__Email__c)</errorConditionFormula>
+    <errorMessage>A sponsor can not be created without an email address</errorMessage>
+</ValidationRule>

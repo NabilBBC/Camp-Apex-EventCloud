@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>SponsorMustBeAssociatedWithAnEvent</fullName>
+    <active>true</active>
+    <description>A Sponsor must be associated with an event before being Accepted.</description>
+    <errorConditionFormula>AND(
+    ISBLANK(CAMPX__Event__c),
+    ISPICKVAL(CAMPX__Status__c, &apos;Accepted&apos;)
+)</errorConditionFormula>
+    <errorMessage>A Sponsor must be associated with an event before being Accepted.</errorMessage>
+</ValidationRule>
