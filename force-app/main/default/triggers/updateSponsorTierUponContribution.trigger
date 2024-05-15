@@ -4,15 +4,15 @@ trigger updateSponsorTierUponContribution on CAMPX__Sponsor__c (before insert, b
         if (sponsor.CAMPX__ContributionAmount__c != null || sponsor.CAMPX__ContributionAmount__c >= 0) {
             if (sponsor.CAMPX__ContributionAmount__c >0 && sponsor.CAMPX__ContributionAmount__c <1000) {
                 sponsor.CAMPX__Tier__c = 'Bronze';
-                break;
+                continue;
             }
             if (sponsor.CAMPX__ContributionAmount__c >= 1000 && sponsor.CAMPX__ContributionAmount__c <5000) {
                 sponsor.CAMPX__Tier__c = 'Silver';
-                break;
+                continue;
             }
             if (sponsor.CAMPX__ContributionAmount__c >= 5000) {
                 sponsor.CAMPX__Tier__c = 'Gold';
-                break;
+                continue;
             }
         }
     }

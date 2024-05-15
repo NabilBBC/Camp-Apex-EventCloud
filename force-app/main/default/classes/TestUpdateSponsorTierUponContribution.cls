@@ -71,7 +71,7 @@ private class TestUpdateSponsorTierUponContribution {
         Test.stopTest();
     }
 
-    @isTest static void createGoldSponsor() {
+    @isTest static void createGoldandBronzeSponsor() {
         Test.startTest();
         
         CAMPX__Event__c evn = new CAMPX__Event__c(
@@ -82,16 +82,28 @@ private class TestUpdateSponsorTierUponContribution {
             );
         insert evn;
 
-        CAMPX__Sponsor__c spons = new CAMPX__Sponsor__c(
+        List<CAMPX__Sponsor__c> sponsorsToInsert = new List<CAMPX__Sponsor__c>();
+        CAMPX__Sponsor__c spons1 = new CAMPX__Sponsor__c(
             Name = 'Random Sponsor',
             CAMPX__ContributionAmount__c = 5000,
             CAMPX__Email__c = 'noemail@noemail.com',
             CAMPX__Status__c = 'Accepted',
             CAMPX__Event__c = evn.id);
-        insert spons;
+            sponsorsToInsert.add(spons1);
 
-        spons = [SELECT CAMPX__Tier__c FROM CAMPX__Sponsor__c WHERE id=:spons.id];
-        Assert.areEqual('Gold',spons.CAMPX__Tier__c);
+        CAMPX__Sponsor__c spons2 = new CAMPX__Sponsor__c(
+            Name = 'Random Sponsor',
+            CAMPX__ContributionAmount__c = 500,
+            CAMPX__Email__c = 'noemail@noemail.com',
+            CAMPX__Status__c = 'Accepted',
+            CAMPX__Event__c = evn.id);
+            sponsorsToInsert.add(spons2);
+
+        insert sponsorsToInsert;
+
+        sponsorsToInsert = [SELECT id, CAMPX__Tier__c FROM CAMPX__Sponsor__c];
+        Assert.areEqual('Gold',sponsorsToInsert.get(0).CAMPX__Tier__c);
+        Assert.areEqual('Bronze',sponsorsToInsert.get(1).CAMPX__Tier__c);
         Test.stopTest();
     }
 }
