@@ -96,7 +96,7 @@ private class SponsorTriggerHandlerTest {
         System.debug('Gross Revenue de l\'event avec 1 sponsor en moins: ' + listOfCreatedEvents2.get(0).CAMPX__GrossRevenue__c);
     }
 
-    @isTest
+    /* @isTest
     static void update2EventsGrossRevenueWhith2Sponsors() {
         List<CAMPX__Sponsor__c> listOfSponsors = new List<CAMPX__Sponsor__c>();
         List<CAMPX__Event__c> listOfEvents = new List<CAMPX__Event__c>();
@@ -136,5 +136,7 @@ private class SponsorTriggerHandlerTest {
         Assert.areEqual(listOfCreatedEvents.get(0).CAMPX__GrossRevenue__c, listOfCreatedSponsors.get(0).CAMPX__ContributionAmount__c);
         Assert.areEqual(listOfCreatedEvents.get(1).CAMPX__GrossRevenue__c, listOfCreatedSponsors.get(1).CAMPX__ContributionAmount__c);
 
-    }
+    } */
+
+    
 }

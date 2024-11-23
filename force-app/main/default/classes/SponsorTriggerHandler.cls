@@ -8,6 +8,14 @@ public with sharing class SponsorTriggerHandler {
         }
     }
 
+    public static void updateSponsorStatusAtUpdate(List<CAMPX__Sponsor__c> newSponsors) {
+        for (CAMPX__Sponsor__c sponsor  : newsponsors) {
+            if (sponsor.CAMPX__Status__c != null && sponsor.CAMPX__Status__c ==  'Accepted' && sponsor.CAMPX__Event__c == null) {
+                sponsor.CAMPX__Status__c = 'Pending';
+            }
+        }        
+    }
+
     public static void preventSponsorCreationWithoutEmail(List<CAMPX__Sponsor__c> triggeringSponsors) {
         for (CAMPX__Sponsor__c sponz : triggeringSponsors) {
             if (String.isblank(sponz.CAMPX__Email__c)) {
@@ -46,188 +54,125 @@ public with sharing class SponsorTriggerHandler {
         }
     }
 
-    public static void updateEventGrossRevenueWhenSponsAccepted(List<CAMPX__Sponsor__c> newSponsors, Map <id, CAMPX__Sponsor__c> oldSponsorsMap) {
-        
-        Id eventId;
-        Decimal totalOfContibutions;
-        CAMPX__Sponsor__c oldSponsor;
-        List<CAMPX__Event__c> events2Update = new List<CAMPX__Event__c>();
-        List<CAMPX__Event__c> eventsList = [SELECT id, Name, CAMPX__GrossRevenue__c FROM Campx__Event__c];
-        System.debug('List of events : ' + eventsList);
-    //Récupére la somme des contribs ayant le même event et un status accepted
-        for (CAMPX__Sponsor__c triggeredSponsor : newSponsors) {
-            if (triggeredSponsor.CAMPX__Status__c != null && triggeredSponsor.CAMPX__Status__c == 'Accepted' && triggeredSponsor.CAMPX__Event__c != null) {
-                eventId = triggeredSponsor.CAMPX__Event__c;
-                List <AggregateResult> sumOfContributions = [SELECT SUM (CAMPX__ContributionAmount__c) totalContributions FROM CAMPX__Sponsor__c WHERE CAMPX__Event__c = :eventId AND CAMPX__Status__c = 'Accepted'];
-                System.debug('Sum of contributions for the event '+ eventId + ' = ' + sumOfContributions);
-    //Stock la somme totale des contrib pour cet event
-                totalOfContibutions = (Decimal)sumOfContributions[0].get('totalContributions');
-                System.debug('totalOfContributions variable : ' + totalOfContibutions);
-            }
-        }
-    //Assigne la valeur des contribs à l'event
-        System.debug('eventid avant la boucle sur les events : ' + eventId);
-        for (CAMPX__Event__c eventToUpdate : eventsList) {
-            if (eventToUpdate.Id == eventId) {
-                System.debug('eventToUpdate Id : ' + eventToUpdate.Id);
-                System.debug('eventToUpdate Gross Revenue before assignment : ' + eventToUpdate.CAMPX__GrossRevenue__c);
-                System.debug('total des contributions avant assignement : ' + totalOfContibutions);
-                if (totalOfContibutions != null) {
-                    eventToUpdate.CAMPX__GrossRevenue__c = totalOfContibutions;
-                    System.debug('event to update Gross Revenue : ' + eventToUpdate.CAMPX__GrossRevenue__c);
-                    events2Update.add(eventToUpdate);
-                }else if (totalOfContibutions == null) {
-                    eventToUpdate.CAMPX__GrossRevenue__c = 0;
-                    System.debug('event to update Gross Revenue est null');
-                }
-            }
-        }update events2Update;
-        System.debug('Les events suivants ont été updatés : ' + events2Update);
-    }
-}
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*   
+    public static void updateEventRevenueWithSponsorContribAtCreation(List<CAMPX__Sponsor__c> newSponsors) {
+        List<CAMPX__Event__c> ListOfEventsToBeUpdated = new List<CAMPX__Event__c>();
     
-    public static void removeContribWhenEventOrSponsStatusIsChanged(List<CAMPX__Sponsor__c> newSpons, Map <id, CAMPX__Sponsor__c> oldSponsMap) {
-        List<CAMPX__Event__c> events2BUpdated = new List<CAMPX__Event__c>();
-        List<CAMPX__Event__c> listOfEventz = new List<CAMPX__Event__c>();
-        System.debug('List of events : ' + listOfEventz);
-        Id IdOfEvent;
-        Decimal totalOfContibutions;
-
-        if (Trigger.isUpdate) {
-            //Boucle sur le trigger
-            for (CAMPX__Sponsor__c triggSpon : newSpons) {
-                //Récupère l'id de l'event associé au sponsor
-                IdOfEvent = triggSpon.CAMPX__Event__c;
-            }
-            listOfEventz =  [SELECT id, Name, CAMPX__GrossRevenue__c,
-                                (SELECT id, Name, CAMPX__ContributionAmount__c, CAMPX__Event__c from CAMPX__Sponsors__r)
-                                FROM Campx__Event__c WHERE id = IdOfEvent;
-                            ]
-            System.debug('List of events : ' + listOfEventz);
-
-            for (CAMPX__Event__c ev2Update : listOfEventz) {
-                if (ev2Update.ID == ev2Update.CAMPX__Sponsors__r.CAMPX__Event__c && ev2Update.CAMPX__Sponsors__r.campx ) {
-                    ev2Update.CAMPX__GrossRevenue__c 
-                    
-                }
-                
-            }
-        }
-
-
-
-    public static void removeContribWhenEventOrSponsStatusIsChanged(List<CAMPX__Sponsor__c> newSpons, Map <id, CAMPX__Sponsor__c> oldSponsMap) {
-
-        List<CAMPX__Event__c> events2BUpdated = new List<CAMPX__Event__c>();
-        List<CAMPX__Event__c> listOfEventz = [SELECT id, Name, CAMPX__GrossRevenue__c FROM Campx__Event__c];
-        System.debug('List of events : ' + listOfEventz);
-        Id IdOfEvent;
-        Decimal totalOfContibutions;
-        CAMPX__Sponsor__c oldSponsor;
-
-        
-        //Si Update
-        if (Trigger.isUpdate) {
-            
-        //Boucle sur le trigger
-            for (CAMPX__Sponsor__c triggSpon : newSpons) {
-        //Récupère l'id de l'event associé au sponsor
-                IdOfEvent = triggSpon.CAMPX__Event__c;
-            
-        //Récupère les anciennes valeurs du Sponsor
-                oldSponsor = oldSponsMap.get(triggSpon.id);
-                System.debug('old sponsor status : ' + oldSponsor.CAMPX__Status__c);
-
-                
-        //Si le statut n'est plus accepted ou si le sponsor change d'event
-                if ((triggSpon.CAMPX__Status__c != 'Accepted' && oldSponsor.CAMPX__Status__c == 'Accepted') || (triggSpon.CAMPX__Event__c != oldSponsor.CAMPX__Event__c)){
-
-        //Additionne les contribution de tous les sponsors de cet event
-                    List <AggregateResult> sumOfContributions = [SELECT SUM (CAMPX__ContributionAmount__c) totalContributions FROM CAMPX__Sponsor__c WHERE CAMPX__Event__c = :IdOfEvent  AND CAMPX__Status__c = 'Accepted'];
-                    System.debug('Sum of contributions for the event '+ IdOfEvent + ' = ' + sumOfContributions);
-        //Retire la contribution du sponsor en question
-                    totalOfContibutions = (Decimal)sumOfContributions[0].get('totalContributions');
-                    System.debug('totalOfContributions variable : ' + totalOfContibutions);
-                }
-
-        //Boucle sur les events
-                for (CAMPX__Event__c eventToUpdate : listOfEventz) {
-                    if (eventToUpdate.Id == IdOfEvent) {
-                        System.debug('eventToUpdate Id : ' + eventToUpdate.Id);
-                        System.debug('eventToUpdate Gross Revenue before assignment : ' + eventToUpdate.CAMPX__GrossRevenue__c);
-                        
-                        if (totalOfContibutions != null) {
-                            eventToUpdate.CAMPX__GrossRevenue__c = totalOfContibutions;
-                            events2BUpdated.add(eventToUpdate);
+        if (!newSponsors.isEmpty()) {
+            for (CAMPX__Sponsor__c newSpons : newSponsors) {
+                // Proceed only if there is a related Event and the status is 'Accepted'
+                if (newSpons.CAMPX__Event__c != null && newSpons.CAMPX__Status__c == 'Accepted') {
+                    // Fetch the related Event record
+                    CAMPX__Event__c newSponsEvent = [
+                        SELECT Id, CAMPX__GrossRevenue__c
+                        FROM CAMPX__Event__c
+                        WHERE Id = :newSpons.CAMPX__Event__c
+                        LIMIT 1
+                    ];
+    
+                    // Proceed only if the event record was found
+                    if (newSponsEvent != null) {
+                        System.debug('newSponsEvent = ' + newSponsEvent);
+                        System.debug('newSpons Contribution = ' + newSpons.CAMPX__ContributionAmount__c);
+    
+                        // Update the GrossRevenue field with contribution amount
+                        if (newSpons.CAMPX__ContributionAmount__c != null) {
+                            if (newSponsEvent.CAMPX__GrossRevenue__c == null) {
+                                newSponsEvent.CAMPX__GrossRevenue__c = newSpons.CAMPX__ContributionAmount__c;
+                            } else {
+                                newSponsEvent.CAMPX__GrossRevenue__c += newSpons.CAMPX__ContributionAmount__c;
+                            }
+                            ListOfEventsToBeUpdated.add(newSponsEvent);
                         }
                     }
                 }
-            } update events2BUpdated;
+            }
+    
+            // Update the list of events if there are any events to update
+            if (!ListOfEventsToBeUpdated.isEmpty()) {
+                update ListOfEventsToBeUpdated;
+                System.debug('Updated event revenues successfully');
+            } else {
+                System.debug('No events to update');
+            }
         }
     }
+    
 
+    public static Decimal calculateTotalContribOfEvent(Id IdOfEvent) {
+        // Aggregate query to sum contributions of all sponsors for the event
+        List<AggregateResult> sumOfContributions = [
+            SELECT SUM(CAMPX__ContributionAmount__c) totalContributions
+            FROM CAMPX__Sponsor__c 
+            WHERE CAMPX__Event__c = :IdOfEvent AND CAMPX__Status__c = 'Accepted'
+        ];
+    
+        // Retrieve the result and handle cases where the result is null
+        Decimal totalOfContributions = (sumOfContributions.isEmpty() || sumOfContributions[0].get('totalContributions') == null) 
+            ? 0 
+            : (Decimal)sumOfContributions[0].get('totalContributions');
+    
+        System.debug('calculateTotalContribOfEvent was called and result is: ' + totalOfContributions);
+    
+        return totalOfContributions;
+    }
+    
 
-    /*     public static void updateEventGrossRevenueWhenSponsAccepted(List<CAMPX__Sponsor__c> newSponsors, Map <id, CAMPX__Sponsor__c> oldSponsorsMap) {
-        List<CAMPX__Event__c> listOfAllEvents = [SELECT id, CAMPX__GrossRevenue__c FROM Campx__Event__c];
-        System.debug('List of all events' + listOfAllEvents);
-        List<CAMPX__Event__c> eventsToUpdate = new List<CAMPX__Event__c>();
-        CAMPX__Sponsor__c oldSponsor;
-        Id sponsorEventId;
-        for (CAMPX__Sponsor__c newSponsor : newSponsors) {
-
-            if (oldSponsorsMap != null && oldSponsorsMap.containsKey(newSponsor.Id)){
-                oldSponsor = oldSponsorsMap.get(newSponsor.Id);
-                System.debug('oldSponsor : ' + oldSponsor);
-            } else {
-                    System.debug('oldSponsorsMap est null : ' + oldSponsorsMap);
-            }
-
-            //on récupère l'Id de l'event auquel le sponsor est rattaché
-            if (newSponsor.CAMPX__Event__c != null) {
-                sponsorEventId = newSponsor.CAMPX__Event__c;
-                System.debug('sponsorEventId : ' + sponsorEventId);
-            } else {
-                System.debug('newSponsor event est null : ' + newSponsor.Campx__Event__c);
-            }
-            
-            //Si le statut du sponsor est à accepté
-            if (newSponsor.CAMPX__Status__c == 'Accepted') {
-                //on récupère l'event lié
-                for (CAMPX__Event__c eventToUpdate : listOfAllEvents) {
-                    if (eventToUpdate.Id == sponsorEventId) {
-                        System.debug('eventToUpdate.id : ' + eventToUpdate.id);
-                        
-                        //on ajoute le montant de la contrib du sponsor au gross revenue de l'event.
-                        if (newSponsor.CAMPX__ContributionAmount__c >0) {
-                            System.debug('Montant de la contrib du sponsor : ' + newSponsor.CAMPX__ContributionAmount__c);
-                            eventToUpdate.CAMPX__GrossRevenue__c = newSponsor.CAMPX__ContributionAmount__c;
-                            System.debug('Nouveau montant du Event CAMPX__GrossRevenue__c : ' + eventToUpdate.CAMPX__GrossRevenue__c);
-                            eventsToUpdate.add(eventToUpdate);
-                        }
-                    }
+    public static void updateEventRevenueWithSponsorContribAtUpdate(List<CAMPX__Sponsor__c> newSponsors, Map <Id, CAMPX__Sponsor__c> oldSponsorsMap) {                
+        Set<CAMPX__Event__c> SetAllEventsToUpdate = new Set<CAMPX__Event__c>();
+    
+        for (CAMPX__Sponsor__c sp : newSponsors) {
+            // Query the new event associated with the sponsor, if any
+            CAMPX__Event__c spEvent = null;
+            if (sp.CAMPX__Event__c != null) {
+                List<CAMPX__Event__c> spEventList = [
+                    SELECT Id, Name, CAMPX__GrossRevenue__c
+                    FROM CAMPX__Event__c
+                    WHERE Id = :sp.CAMPX__Event__c
+                    LIMIT 1
+                ];
+                if (!spEventList.isEmpty()) {
+                    spEvent = spEventList[0];
+                    System.debug('spEvent : ' + spEvent.Name);
                 }
             }
-        }update eventsToUpdate;
-    } */
+            
+            // Retrieve the old event associated with the sponsor, if any
+            if (oldSponsorsMap.containsKey(sp.Id) && oldSponsorsMap.get(sp.Id).CAMPX__Event__c != null) {
+                Id spOldEventId = oldSponsorsMap.get(sp.Id).CAMPX__Event__c;
+                List<CAMPX__Event__c> spOldEventList = [
+                    SELECT Id, Name, CAMPX__GrossRevenue__c
+                    FROM CAMPX__Event__c
+                    WHERE Id = :spOldEventId
+                    LIMIT 1
+                ];
+                
+                CAMPX__Event__c spOldEvent = spOldEventList.isEmpty() ? null : spOldEventList[0];
+                
+                if (spOldEvent != null) {
+                    System.debug('spOldEvent Name : ' + spOldEvent.Name);
+    
+                    // Recalculate the Gross Revenue for the old event
+                    System.debug('Previous Event Gross Revenue before update = ' + spOldEvent.CAMPX__GrossRevenue__c);
+                    spOldEvent.CAMPX__GrossRevenue__c = calculateTotalContribOfEvent(spOldEvent.Id);
+                    SetAllEventsToUpdate.add(spOldEvent);
+                }
+            }
+    
+            // If there's a new event, recalculate the Gross Revenue for it as well
+            if (spEvent != null) {
+                System.debug('New Event Gross Revenue before update = ' + spEvent.CAMPX__GrossRevenue__c);
+                spEvent.CAMPX__GrossRevenue__c = calculateTotalContribOfEvent(spEvent.Id);
+                SetAllEventsToUpdate.add(spEvent);
+            }
+        }
+    
+        // Convert Set to List and update only if there are events to update
+        if (!SetAllEventsToUpdate.isEmpty()) {
+            List<CAMPX__Event__c> ListOfEventsToUpdate = new List<CAMPX__Event__c>(SetAllEventsToUpdate);
+            update ListOfEventsToUpdate;
+            System.debug('All events were updated successfully');
+        } else {
+            System.debug('No events to update');
+        }
+    }    
+}
